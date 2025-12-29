@@ -2,9 +2,15 @@ package com.example.demo_bibliotheque;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.FieldError;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.*;
 
+import jakarta.validation.Valid;
+
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/livres")
@@ -32,10 +38,8 @@ public class ControleurBibliotheque {
     // UPDATE : @PutMapping
     // URL : PUT http://localhost:8080/api/v1/livres/1
     @PutMapping("/{id}")
-    public Livre modifierLivre(@PathVariable long id, @RequestBody Livre livreModifie) {
-        // Si le livre est trouvé et mis à jour, retourne 200 OK
-        // S'il n'est pas trouvé, l'exception est lancée -> 404 NOT FOUND
-        return serviceLivres.mettreAJourLivre(id, livreModifie);
+    public Livre mettreAJourLivre(@PathVariable long id, @Valid @RequestBody Livre livreModifie) {
+        return serviceLivres.modifierLivre(id, livreModifie);
     }
 
     // -------------------------------------------------------------------
@@ -52,16 +56,16 @@ public class ControleurBibliotheque {
     // -------------------------------------------------------------------
     // POST : @PostMapping
     // URL : POST http://localhost:8080/api/v1/livres
-    @PostMapping("/")
+    @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public Livre ajoutLivre(@RequestBody Livre nouveauLivre) {
+    public Livre ajoutLivre(@Valid @RequestBody Livre nouveauLivre) {
         return serviceLivres.ajouterLivre(nouveauLivre);
     }
 
     // -------------------------------------------------------------------
     // GET : @GetMapping
     // URL : GET http://localhost:8080/api/v1/livres
-    @GetMapping("/")
+    @GetMapping
     public List<Livre> trouverTousLesLivres(
         // @RequestParam String auteur : Spring essaie de trouver ?auteur=...
         // required = false : le paramètre est OPTIONNEL. S'il n'est pas fourni, 'auteur' sera null.
@@ -74,5 +78,17 @@ public class ControleurBibliotheque {
             // Sinon, on retourne tous les livres
             return serviceLivres.trouverTousLesLivres();
         }
+    }
+
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public Map<String, String> gererValidationExceptions(MethodArgumentNotValidException ex) {
+        Map<String, String> erreurs = new HashMap<>();
+        ex.getBindingResult().getAllErrors().forEach((error) -> {
+            String nomChamp = ((FieldError) error).getField();
+            String messageErreur = error.getDefaultMessage();
+            erreurs.put(nomChamp, messageErreur);
+        });
+        return erreurs;
     }
 }
