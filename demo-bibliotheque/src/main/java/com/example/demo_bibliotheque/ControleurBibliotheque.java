@@ -66,18 +66,10 @@ public class ControleurBibliotheque {
     // GET : @GetMapping
     // URL : GET http://localhost:8080/api/v1/livres
     @GetMapping
-    public List<Livre> trouverTousLesLivres(
-        // @RequestParam String auteur : Spring essaie de trouver ?auteur=...
-        // required = false : le paramètre est OPTIONNEL. S'il n'est pas fourni, 'auteur' sera null.
-        @RequestParam(required = false) String auteur
-    ) {
-        if (auteur != null) {
-            // Si l'auteur est fourni dans l'URL, on filtre
-            return serviceLivres.trouverParAuteur(auteur);
-        } else {
-            // Sinon, on retourne tous les livres
-            return serviceLivres.trouverTousLesLivres();
-        }
+    public List<LivreDTO> listeLivres() {
+        return serviceLivres.trouverTousLesLivres().stream()
+                .map(l -> new LivreDTO(l.getId(), l.getTitre(), l.getAuteur(), l.getAnneePublication()))
+                .toList();
     }
 
     @ResponseStatus(HttpStatus.BAD_REQUEST)

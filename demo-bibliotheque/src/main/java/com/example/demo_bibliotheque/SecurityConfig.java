@@ -1,5 +1,7 @@
 package com.example.demo_bibliotheque;
 
+import java.util.List;
+
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -19,14 +21,22 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
+           // On active la configuration CORS
+            .cors(cors -> cors.configurationSource(request -> {
+                var corsConfiguration = new org.springframework.web.cors.CorsConfiguration();
+                corsConfiguration.setAllowedOrigins(List.of("http://localhost:4200")); // Adresse d'Angular
+                corsConfiguration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+                corsConfiguration.setAllowedHeaders(List.of("*"));
+                return corsConfiguration;
+            }))
             .csrf(csrf -> csrf.disable()) // Désactivé pour faciliter les tests API (Postman)
             .authorizeHttpRequests(auth -> auth
                 // 1. Tout le monde peut voir la liste (GET)
-                .requestMatchers(HttpMethod.GET, "/api/v1/livres", "/api/v1/livres/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/v1/livres", "/api/v1/livres/**", "/swagger-ui/**", "/v3/api-docs/**").permitAll()
                 // 2. Il faut être ADMIN pour créer, modifier ou supprimer
-                .requestMatchers("/api/v1/livres", "/api/v1/livres/**").hasRole("ADMIN")
+                .requestMatchers("/api/v1/livres", "/api/v1/livres/**", "/swagger-ui/**", "/v3/api-docs/**").hasRole("ADMIN")
                 // 3. Permettre l'accès à la console H2 (très important pour vous !)
-                .requestMatchers("/h2-console/**").permitAll()
+                .requestMatchers("/h2-console/**", "/swagger-ui/**", "/v3/api-docs/**").permitAll()
                 .anyRequest().authenticated()
             )
             .headers(headers -> headers.frameOptions(frame -> frame.disable())) // Nécessaire pour H2
